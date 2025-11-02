@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 Unani Materia Medica Study App</title>
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary: #4CAF50; /* Green */
+            --secondary: #2196F3; /* Blue */
+            --background: #f4f7f6;
+            --surface: #ffffff;
+            --text-color: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --danger: #f44336;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        #app-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            background-color: #e8f5e9; /* Light green for nav */
+            border-radius: 8px;
+        }
+
+        .nav-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            font-weight: bold;
+        }
+
+        .nav-button:hover:not(.active) { background-color: #388e3c; }
+        .nav-button.active { background-color: var(--secondary); cursor: default; }
+
+        .screen {
+            display: none;
+            padding: 20px 0;
+            min-height: 500px;
+        }
+
+        .screen.active { display: block; }
+
+        /* --- DASHBOARD STYLES --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background-color: #f0f4f7;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .box-stats li {
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        /* --- FLASHCARD STYLES --- */
+        #flashcard-display {
+            perspective: 1000px;
+            margin: 30px auto;
+            width: 100%;
+            max-width: 500px;
+            height: 300px;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: var(--shadow);
+            border-radius: 12px;
+        }
+
+        .flashcard-display.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: var(--surface);
+            border-radius: 12px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+            background-color: #e8f5e9;
+            text-align: left;
+            padding: 30px;
+        }
+
+        .flashcard-back p { margin-top: 5px; font-size: 0.9em; color: #555; }
+        .flashcard-back strong { color: var(--primary); }
+
+        .flashcard-controls button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        .btn-remembered { background-color: var(--primary); color: white; }
+        .btn-hesitated { background-color: var(--secondary); color: white; }
+        .btn-missed { background-color: var(--danger); color: white; }
+        .flashcard-controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* --- QUIZ STYLES --- */
+        .quiz-option {
+            background-color: #f0f0f0;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .quiz-option:hover { background-color: #e0e0e0; }
+        .quiz-option.correct { background-color: #c8e6c9; border-color: var(--primary); }
+        .quiz-option.incorrect { background-color: #ffcdd2; border-color: var(--danger); }
+        .quiz-option.disabled { cursor: default; }
+
+        #quiz-explanation {
+            margin-top: 20px;
+            padding: 15px;
+            border-left: 5px solid var(--secondary);
+            background-color: #f1f8ff;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        /* --- DATA EXTRACTION STYLES --- */
+        #extraction-area, #review-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .heading-map-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        /* --- UTILITIES --- */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>🌿 Unani Materia Medica Study App</h1>
+            <p>Master your Unani single drugs with Spaced Repetition and Active Recall.</p>
+        </header>
+
+        <nav>
+            <button class="nav-button active" data-screen="dashboard">Dashboard</button>
+            <button class="nav-button" data-screen="flashcards">Flashcards</button>
+            <button class="nav-button" data-screen="quiz">MCQ Quiz</button>
+            <button class="nav-button" data-screen="extract">Data/PDF</button>
+            <button class="nav-button" data-screen="settings">Settings/Export</button>
+        </nav>
+
+        <main id="screen-container">
+            <section id="dashboard-screen" class="screen active">
+                <h2>📊 Progress Overview</h2>
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3>Total Items</h3>
+                        <p id="stat-total-items">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Upcoming Reviews (Today)</h3>
+                        <p id="stat-upcoming-reviews">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Weak Topics</h3>
+                        <p id="stat-weak-topics">N/A</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Leitner Boxes Status</h3>
+                        <ul id="box-status-list" class="box-stats"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="flashcards-screen" class="screen">
+                <h2>🃏 Flashcards Mode</h2>
+                <div id="flashcard-controls-setup">
+                    <label for="flashcard-deck-select">Select Deck:</label>
+                    <select id="flashcard-deck-select"></select>
+                    <button onclick="APP.startFlashcardSession()">Start/Next Session</button>
+                </div>
+
+                <div id="flashcard-session-area" style="display: none;">
+                    <p id="flashcard-count-info"></p>
+                    <div id="flashcard-display" class="flashcard-display" onclick="APP.flipCard()">
+                        <div class="flashcard-inner">
+                            <div class="flashcard-face flashcard-front">
+                                <h3 id="card-question-text">Click 'Start/Next Session' to begin.</h3>
+                                <p>(Click to reveal answer)</p>
+                            </div>
+                            <div class="flashcard-face flashcard-back">
+                                <strong>Answer:</strong> <span id="card-correct-answer"></span>
+                                <hr>
+                                <strong>Explanation:</strong> <p id="card-explanation"></p>
+                                <strong>Source:</strong> <p id="card-source-info"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="flashcard-controls" class="flashcard-controls" style="text-align: center;">
+                        <button class="btn-missed" onclick="APP.rateFlashcard(1)">❌ I missed (Box 1)</button>
+                        <button class="btn-hesitated" onclick="APP.rateFlashcard(3)">⚠️ I hesitated (Box 2/3)</button>
+                        <button class="btn-remembered" onclick="APP.rateFlashcard(5)">✅ I remembered (Box +)</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quiz-screen" class="screen">
+                <h2>❓ MCQ Quiz Mode</h2>
+                <div id="quiz-controls-setup">
+                    <label for="quiz-deck-select">Select Deck:</label>
+                    <select id="quiz-deck-select"></select>
+
+                    <label for="quiz-count">Questions:</label>
+                    <input type="number" id="quiz-count" value="10" min="1" max="50">
+
+                    <label for="quiz-mode-mixed">Mixed Mode:</label>
+                    <input type="checkbox" id="quiz-mode-mixed">
+
+                    <button onclick="APP.startQuiz()">Start Quiz</button>
+                </div>
+
+                <div id="quiz-session-area" style="display: none;">
+                    <h3 id="quiz-question-number">Question 1/10</h3>
+                    <p id="quiz-question-text">Question Text</p>
+
+                    <div id="quiz-options-container">
+                        </div>
+
+                    <div id="quiz-explanation" style="display: none;">
+                        <strong>Explanation:</strong> <span id="quiz-explanation-text"></span>
+                        <p>Source: <span id="quiz-explanation-source"></span></p>
+                    </div>
+
+                    <button id="quiz-next-button" onclick="APP.nextQuizQuestion()" style="display: none;">Next Question</button>
+
+                    <div id="quiz-stats-summary" style="margin-top: 20px;"></div>
+                </div>
+            </section>
+
+            <section id="extract-screen" class="screen">
+                <h2>📥 Data Extraction & Review</h2>
+                <div id="extraction-area">
+                    <input type="file" id="pdf-upload" accept="application/pdf" multiple>
+                    <p>Upload Unani Drug PDF(s)</p>
+                    <button onclick="APP.processPDFs()">Process & Extract Text</button>
+                    <p>*(Requires `pdfjs-dist` in a real environment)*</p>
+                </div>
+
+                <div id="review-area" style="display: none;">
+                    <h3>Step 2: Review Headings & Map to Chapters</h3>
+                    <div id="heading-mapping-container">
+                        </div>
+                    <button onclick="APP.generateMCQs()">Auto-Generate & Approve MCQs</button>
+                </div>
+
+                <div id="manual-review-screen" style="display: none;">
+                    <h3>Step 3: Manual Review & Edit Deck</h3>
+                    <select id="review-deck-select"></select>
+                    <div id="review-items-list">
+                        </div>
+                </div>
+            </section>
+
+            <section id="settings-screen" class="screen">
+                <h2>⚙️ Settings & Data Management</h2>
+
+                <h3>Data Import/Export</h3>
+                <p>Use this to backup your study progress.</p>
+                <button onclick="APP.exportData('json')">Export Data (JSON)</button>
+                <input type="file" id="import-json" accept="application/json">
+                <button onclick="APP.importData()">Import Data (JSON)</button>
+                <button onclick="APP.exportFlashcardsPDF()">Export Flashcards (PDF)</button>
+                <button onclick="APP.clearData()" style="background-color: var(--danger); color: white;">Clear All Data</button>
+                <p id="data-message"></p>
+
+                <hr>
+                <h3>Canva Embed Instructions</h3>
+                <p>Embed this application into a Canva website using an `iframe`.</p>
+                <pre id="canva-embed-code">
+&lt;iframe 
+    src="[YOUR_HOSTED_URL]/index.html" 
+    width="100%" 
+    height="800px" 
+    style="border: none;"
+    title="Unani Study App"
+&gt;&lt;/iframe&gt;
+                </pre>
+                <p>NOTE: You must first host this HTML file online.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // CORE APPLICATION LOGIC
+        const APP = {
+            data: {
+                decks: [],
+                settings: {
+                    leitnerIntervals: [1, 3, 7, 21, 60], // Days
+                    easeFactorMin: 1.3,
+                    easeFactorMax: 2.8,
+                }
+            },
+            currentFlashcardItem: null,
+            currentQuizSet: [],
+            quizState: {
+                currentQIndex: -1,
+                correctCount: 0,
+                startTime: 0,
+                questionStartTimes: [],
+            },
+            // --- UI/NAVIGATION ---
+            navigate(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(`${screenId}-screen`).classList.add('active');
+                document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.nav-button[data-screen="${screenId}"]`).classList.add('active');
+
+                // Update dashboards/selects when navigating
+                if (screenId === 'dashboard') {
+                    this.updateDashboard();
+                } else if (screenId === 'flashcards') {
+                    this.populateDeckSelects('flashcard-deck-select');
+                } else if (screenId === 'quiz') {
+                    this.populateDeckSelects('quiz-deck-select');
+                } else if (screenId === 'extract') {
+                    this.populateDeckSelects('review-deck-select');
+                }
+            },
+
+            // --- STORAGE & INITIALIZATION ---
+            init() {
+                this.loadData();
+                this.navigate('dashboard'); // Start on dashboard
+                document.querySelectorAll('.nav-button').forEach(button => {
+                    button.addEventListener('click', (e) => this.navigate(e.target.dataset.screen));
+                });
+            },
+
+            loadData() {
+                try {
+                    const savedData = localStorage.getItem('unaniStudyData');
+                    if (savedData) {
+                        const parsedData = JSON.parse(savedData);
+                        this.data.decks = parsedData.decks || this.data.decks;
+                        this.data.settings = parsedData.settings || this.data.settings;
+                    } else {
+                        // Seed Data for demonstration if no data is found
+                        this.data.decks = this.getSeedData().decks;
+                    }
+                    this.updateDashboard();
+                } catch (e) {
+                    console.error("Error loading data:", e);
+                    // Fallback to seed data
+                    this.data.decks = this.getSeedData().decks;
+                }
+            },
+
+            saveData() {
+                try {
+                    localStorage.setItem('unaniStudyData', JSON.stringify(this.data));
+                } catch (e) {
+                    console.error("Error saving data:", e);
+                }
+            },
+            
+            clearData() {
+                if (confirm("Are you sure you want to clear ALL study data? This cannot be undone.")) {
+                    localStorage.removeItem('unaniStudyData');
+                    this.data.decks = this.getSeedData().decks;
+                    this.updateDashboard();
+                    document.getElementById('data-message').textContent = 'All data cleared. Seed data re-loaded.';
+                }
+            },
+            
+            // Placeholder for seed data
+            getSeedData() {
+                // Example JSON Schema from the prompt
+                return {
+                    "decks": [{
+                        "deck_id": "mineral_origin",
+                        "title": "Unani — Mineral Origin Drugs",
+                        "items": [{
+                            "id": "M-001",
+                            "question_text": "What is the Unani name for Red Sulphide of Mercury (Cinnabar)?",
+                            "options": ["Shingar", "Tinkar", "Zahar Mohra", "Abrak Safed"],
+                            "correct_index": 0,
+                            [span_0](start_span)"explanation": "Shingar is the Unani name for Red Sulphide of Mercury, commonly known as Cinnabar. It is used as a tonic and restorative.[span_0](end_span)",
+                            "source_pdf": "DOC-20251101-WA0043.pdf",
+                            "page_number": 10,
+                            "chapter": "Mercury Compounds",
+                            "difficulty": "medium",
+                            "tags": ["tonic", "restorative", "mercury"],
+                            "learnings": { "ease_factor": 2.5, "repetition": 0, "box": 1, "next_review": this.getFutureDate(1) }
+                        },
+                        {
+                            "id": "M-002",
+                            "question_text": "What is the temperament (Mizaj) of Abrak Safed wa Siyah (Mica)?",
+                            "options": ["Hot & Dry", "Cold & Dry", "Cold & Wet", "Hot & Wet"],
+                            "correct_index": 1,
+                            [span_1](start_span)"explanation": "Abrak (Mica) is described with a temperament of Cold & Dry (سرد و خشک) in the text.[span_1](end_span)",
+                            "source_pdf": "DOC-20251101-WA0043.pdf",
+                            "page_number": 2,
+                            "chapter": "Silicates",
+                            "difficulty": "easy",
+                            "tags": ["temperament", "mica"],
+                            "learnings": { "ease_factor": 2.5, "repetition": 0, "box": 1, "next_review": this.getFutureDate(1) }
+                        }]
+                    }]
+                };
+            },
+
+            getFutureDate(days) {
+                const date = new Date();
+                date.setDate(date.getDate() + days);
+                return date.toISOString().split('T')[0];
+            },
+
+            // --- DASHBOARD FUNCTIONS ---
+            updateDashboard() {
+                const now = new Date();
+                let totalItems = 0;
+                let upcomingReviews = 0;
+                const boxCounts = Array(this.data.settings.leitnerIntervals.length).fill(0);
+                const topicAccuracy = {}; // { chapter: { correct: 0, total: 0 } }
+
+                this.data.decks.forEach(deck => {
+                    deck.items.forEach(item => {
+                        totalItems++;
+                        const reviewDate = new Date(item.learnings.next_review);
+                        if (reviewDate <= now) {
+                            upcomingReviews++;
+                        }
+                        boxCounts[item.learnings.box - 1]++;
+                        
+                        // Basic accuracy tracking for weak topics (mock-up)
+                        if (!topicAccuracy[item.chapter]) {
+                            topicAccuracy[item.chapter] = { correct: 0, total: 0 };
+                        }
+                        // Assuming high box number means high accuracy
+                        if (item.learnings.box > 3) {
+                            topicAccuracy[item.chapter].correct++;
+                        }
+                        topicAccuracy[item.chapter].total++;
+                    });
+                });
+
+                document.getElementById('stat-total-items').textContent = totalItems;
+                document.getElementById('stat-upcoming-reviews').textContent = upcomingReviews;
+
+                const weakTopics = Object.entries(topicAccuracy)
+                    .filter(([topic, stats]) => stats.total > 5 && (stats.correct / stats.total) < 0.7)
+                    .map(([topic, stats]) => `${topic} (${Math.round(stats.correct / stats.total * 100)}%)`);
+                
+                document.getElementById('stat-weak-topics').textContent = weakTopics.length > 0 ? weakTopics.join(', ') : 'None detected.';
+
+                const boxList = document.getElementById('box-status-list');
+                boxList.innerHTML = '';
+                this.data.settings.leitnerIntervals.forEach((days, index) => {
+                    boxList.innerHTML += `<li><strong>Box ${index + 1}</strong> (Next: ${days} days): ${boxCounts[index]} items</li>`;
+                });
+            },
+
+            // --- PDF/EXTRACTION/DATA MANAGEMENT ---
+            processPDFs() {
+                // Placeholder: In a real app, this would use pdfjs-dist
+                alert("PDF Processing started... (In a real app, pdfjs-dist would run here).");
+                
+                // Mock Extraction Result for UI flow:
+                document.getElementById('review-area').style.display = 'block';
+                const mappingContainer = document.getElementById('heading-mapping-container');
+                mappingContainer.innerHTML = `
+                    <div class="heading-map-item">
+                        <span>Extracted Heading: 'Mineral Origin Drugs'</span>
+                        <select>
+                            <option value="mineral_origin">Map to: Mineral Origin Drugs</option>
+                        </select>
+                    </div>
+                    <div class="heading-map-item">
+                        <span>Extracted Heading: 'Abrak Safed wa Siyah'</span>
+                        <select>
+                            <option value="mica_drug">Map to: Mica Drug Chapter</option>
+                        </select>
+                    </div>
+                `;
+            },
+
+            generateMCQs() {
+                // Placeholder: Logic to generate questions based on extracted text and heuristics
+                alert("MCQ generation complete. Check the Dashboard for new items.");
+                // In a real scenario, this would generate new items and call this.saveData();
+                this.navigate('dashboard');
+            },
+
+            // --- DECK UTILITIES ---
+            populateDeckSelects(selectId) {
+                const select = document.getElementById(selectId);
+                select.innerHTML = ''; // Clear previous options
+                this.data.decks.forEach(deck => {
+                    select.innerHTML += `<option value="${deck.deck_id}">${deck.title} (${deck.items.length} items)</option>`;
+                });
+                if (this.data.decks.length === 0) {
+                    select.innerHTML = '<option>No decks available</option>';
+                }
+            },
+            
+            // --- SPACED REPETITION (SM-2/LEITNER HYBRID) ---
+            calculateNextReview(item, rating) {
+                let { box, ease_factor, repetition } = item.learnings;
+                
+                const intervals = this.data.settings.leitnerIntervals;
+                const minEF = this.data.settings.easeFactorMin;
+                const maxEF = this.data.settings.easeFactorMax;
+
+                // Rating 5: I remembered (Easy)
+                if (rating >= 4) { 
+                    repetition++;
+                    ease_factor = Math.min(maxEF, ease_factor + 0.1);
+                    box = Math.min(intervals.length, box + 1); // Promote box
+                }
+                // Rating 3: I hesitated (Medium)
+                else if (rating === 3) {
+                    // Stay in the same box or small promotion
+                    box = Math.min(intervals.length, box + 0); // Stays in same box for now
+                    // No change to EF or repetition count for small hesitation
+                }
+                // Rating 1: I missed (Hard)
+                else {
+                    repetition = 0;
+                    ease_factor = Math.max(minEF, ease_factor - 0.2);
+                    box = 1; // Demote to Box 1
+                }
+                
+                // Calculate next interval based on new box and ease factor
+                let intervalIndex = box - 1;
+                let baseInterval = intervals[intervalIndex] || intervals[intervals.length - 1]; // Use last interval for highest box
+                let nextIntervalDays = Math.round(baseInterval * ease_factor);
+                
+                // Box 1 and 2 often have fixed-day minimums, override if necessary
+                if (box === 1) nextIntervalDays = intervals[0];
+                if (box === 2) nextIntervalDays = intervals[1];
+
+                const nextReview = this.getFutureDate(nextIntervalDays);
+
+                item.learnings = {
+                    box: box,
+                    ease_factor: parseFloat(ease_factor.toFixed(2)),
+                    repetition: repetition,
+                    next_review: nextReview
+                };
+            },
+
+            // --- FLASHCARDS MODE ---
+            startFlashcardSession() {
+                const deckId = document.getElementById('flashcard-deck-select').value;
+                const deck = this.data.decks.find(d => d.deck_id === deckId);
+                
+                if (!deck) return alert("Select a valid deck.");
+
+                const upcomingItems = deck.items.filter(item => {
+                    return new Date(item.learnings.next_review) <= new Date();
+                }).sort(() => 0.5 - Math.random()); // Simple shuffle for now
+
+                if (upcomingItems.length === 0) {
+                    return alert("No items due for review in this deck.");
+                }
+
+                this.currentFlashcardItem = upcomingItems[0];
+                this.updateFlashcardUI();
+                
+                document.getElementById('flashcard-session-area').style.display = 'block';
+                document.getElementById('flashcard-count-info').textContent = `Reviewing 1 of ${upcomingItems.length} items due today.`;
+            },
+
+            updateFlashcardUI() {
+                const item = this.currentFlashcardItem;
+                if (!item) return;
+
+                const cardDisplay = document.getElementById('flashcard-display');
+                cardDisplay.classList.remove('flipped');
+                cardDisplay.onclick = this.flipCard;
+
+                document.getElementById('card-question-text').textContent = item.question_text;
+                document.getElementById('card-correct-answer').textContent = item.options[item.correct_index];
+                document.getElementById('card-explanation').textContent = item.explanation;
+                document.getElementById('card-source-info').textContent = `${item.source_pdf} (Page ${item.page_number}, Box ${item.learnings.box})`;
+            },
+
+            flipCard() {
+                document.getElementById('flashcard-display').classList.add('flipped');
+                document.getElementById('flashcard-display').onclick = null; // Disable flip after first reveal
+            },
+
+            rateFlashcard(rating) {
+                if (!this.currentFlashcardItem) return;
+
+                this.calculateNextReview(this.currentFlashcardItem, rating);
+                this.saveData(); // Persist the updated learning state
+                this.startFlashcardSession(); // Load the next card
+            },
+
+            // --- QUIZ MODE ---
+            startQuiz() {
+                const deckId = document.getElementById('quiz-deck-select').value;
+                const isMixed = document.getElementById('quiz-mode-mixed').checked;
+                const count = parseInt(document.getElementById('quiz-count').value);
+                
+                let allItems = [];
+                if (isMixed) {
+                    this.data.decks.forEach(deck => allItems.push(...deck.items));
+                } else {
+                    const deck = this.data.decks.find(d => d.deck_id === deckId);
+                    if (deck) allItems.push(...deck.items);
+                }
+
+                if (allItems.length === 0) return alert("No items to quiz on.");
+
+                // Select and shuffle the items
+                const shuffledItems = allItems.sort(() => 0.5 - Math.random());
+                this.currentQuizSet = shuffledItems.slice(0, Math.min(count, allItems.length));
+
+                if (this.currentQuizSet.length === 0) return alert("No items selected for the quiz.");
+                
+                this.quizState = {
+                    currentQIndex: -1,
+                    correctCount: 0,
+                    startTime: Date.now(),
+                    questionStartTimes: [],
+                    answers: []
+                };
+                
+                document.getElementById('quiz-session-area').style.display = 'block';
+                document.getElementById('quiz-stats-summary').innerHTML = '';
+                this.nextQuizQuestion();
+            },
+
+            nextQuizQuestion() {
+                // Check if current question was answered (unless it's the very first call)
+                if (this.quizState.currentQIndex >= 0 && !document.getElementById('quiz-explanation').style.display) {
+                    return alert("Please select an answer and view the explanation before proceeding.");
+                }
+
+                this.quizState.currentQIndex++;
+                if (this.quizState.currentQIndex >= this.currentQuizSet.length) {
+                    return this.endQuiz();
+                }
+
+                const item = this.currentQuizSet[this.quizState.currentQIndex];
+                
+                // Setup UI for new question
+                document.getElementById('quiz-explanation').style.display = 'none';
+                document.getElementById('quiz-next-button').style.display = 'none';
+                
+                document.getElementById('quiz-question-number').textContent = `Question ${this.quizState.currentQIndex + 1}/${this.currentQuizSet.length}`;
+                document.getElementById('quiz-question-text').textContent = item.question_text;
+                
+                const optionsContainer = document.getElementById('quiz-options-container');
+                optionsContainer.innerHTML = '';
+
+                // Simple option shuffling (A, B, C, D)
+                const optionMap = item.options.map((text, index) => ({ text, index }));
+                // In a real app, a proper shuffle of the option elements would be done here.
+                
+                optionMap.forEach((opt, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'quiz-option';
+                    div.textContent = `${String.fromCharCode(65 + idx)}. ${opt.text}`; // A, B, C, D
+                    div.dataset.optionIndex = opt.index;
+                    div.onclick = () => this.selectQuizOption(div, item, opt.index);
+                    optionsContainer.appendChild(div);
+                });
+
+                this.quizState.questionStartTimes.push(Date.now());
+            },
+
+            selectQuizOption(element, item, selectedIndex) {
+                const correctIndex = item.correct_index;
+                const isCorrect = selectedIndex === correctIndex;
+                const questionEndTime = Date.now();
+                const questionStartTime = this.quizState.questionStartTimes[this.quizState.currentQIndex];
+                const timeTaken = (questionEndTime - questionStartTime) / 1000; // seconds
+
+                // Disable all options
+                document.querySelectorAll('.quiz-option').forEach(opt => {
+                    opt.onclick = null;
+                    opt.classList.add('disabled');
+                });
+
+                // Highlight correct/incorrect
+                element.classList.add(isCorrect ? 'incorrect' : 'incorrect'); // Mark selected
+                document.querySelector(`[data-option-index="${correctIndex}"]`).classList.add('correct'); // Highlight correct
+
+                if (isCorrect) {
+                    this.quizState.correctCount++;
+                }
+
+                // Spaced Repetition Logic integration (Rating: 5=Correct, 1=Incorrect)
+                const rating = isCorrect ? 5 : 1;
+                // Find the item in the actual data structure and update
+                const deck = this.data.decks.find(d => d.items.some(i => i.id === item.id));
+                const dataItem = deck.items.find(i => i.id === item.id);
+                this.calculateNextReview(dataItem, rating);
+                this.saveData();
+
+                // Store answer details
+                this.quizState.answers.push({
+                    question_id: item.id,
+                    isCorrect: isCorrect,
+                    timeTaken: timeTaken,
+                    chapter: item.chapter
+                });
+
+                // Show explanation and next button
+                document.getElementById('quiz-explanation-text').textContent = item.explanation;
+                document.getElementById('quiz-explanation-source').textContent = `${item.source_pdf} (Page ${item.page_number})`;
+                document.getElementById('quiz-explanation').style.display = 'block';
+                document.getElementById('quiz-next-button').style.display = 'block';
+            },
+
+            endQuiz() {
+                const totalQuestions = this.currentQuizSet.length;
+                const totalTime = (Date.now() - this.quizState.startTime) / 1000;
+                const accuracy = (this.quizState.correctCount / totalQuestions) * 100;
+                
+                let summary = `<h3>Quiz Finished!</h3>`;
+                summary += `<p>Score: <strong>${this.quizState.correctCount} / ${totalQuestions}</strong> (${accuracy.toFixed(1)}%)</p>`;
+                summary += `<p>Total Time: <strong>${totalTime.toFixed(1)} seconds</strong></p>`;
+                summary += `<p>Avg Time per Question: <strong>${(totalTime / totalQuestions).toFixed(1)} seconds</strong></p>`;
+
+                // Accuracy per topic
+                const topicStats = this.quizState.answers.reduce((acc, ans) => {
+                    if (!acc[ans.chapter]) acc[ans.chapter] = { correct: 0, total: 0 };
+                    acc[ans.chapter].total++;
+                    if (ans.isCorrect) acc[ans.chapter].correct++;
+                    return acc;
+                }, {});
+
+                summary += `<h4>Accuracy by Topic:</h4><ul>`;
+                Object.entries(topicStats).forEach(([topic, stats]) => {
+                    summary += `<li>${topic}: ${stats.correct}/${stats.total} (${((stats.correct / stats.total) * 100).toFixed(1)}%)</li>`;
+                });
+                summary += `</ul>`;
+
+                document.getElementById('quiz-session-area').style.display = 'none';
+                document.getElementById('quiz-stats-summary').innerHTML = summary;
+            },
+
+            // --- EXPORT FUNCTIONS (Placeholders) ---
+            exportData(format) {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `unani_study_data_${new Date().toISOString().split('T')[0]}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                document.getElementById('data-message').textContent = 'Data exported successfully.';
+            },
+
+            importData() {
+                const fileInput = document.getElementById('import-json');
+                if (fileInput.files.length === 0) return alert("Please select a JSON file to import.");
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (importedData.decks) {
+                            this.data = importedData; // Overwrite current data
+                            this.saveData();
+                            this.updateDashboard();
+                            document.getElementById('data-message').textContent = 'Data imported successfully. Reloading dashboard.';
+                            this.navigate('dashboard');
+                        } else {
+                            throw new Error("Invalid data structure.");
+                        }
+                    } catch (error) {
+                        alert("Error importing data: " + error.message);
+                    }
+                };
+                reader.readAsText(fileInput.files[0]);
+            },
+
+            exportFlashcardsPDF() {
+                // Placeholder: Requires jsPDF library
+                alert("PDF export initiated. (Requires jsPDF in a real environment). Exporting 1 card per page.");
+            }
+        };
+
+        // Initialize the application when the DOM is ready
+        document.addEventListener('DOMContentLoaded', () => APP.init());
+    </script>
+</body>
+</html>
